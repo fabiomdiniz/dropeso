@@ -2,4 +2,5 @@
 <resources>
     <string name="hello">Hello World, DropboxSample!</string>
     <string name="app_name">dropeso</string>
+    <string name="up_button">Upload Weight</string>
 </resources>

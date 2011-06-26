@@ -45,4 +45,8 @@
 	  android:layout_height="wrap_content" 
       android:id="@+id/text" 
 	  />
+	<EditText android:layout_height="wrap_content" android:layout_width="match_parent" android:inputType="numberDecimal" android:enabled="false" android:id="@+id/weight_value">
+		<requestFocus></requestFocus>
+	</EditText>
+	<Button android:layout_height="wrap_content" android:layout_width="match_parent" android:text="@string/up_button" android:enabled="false" android:id="@+id/upload_button"></Button>
 </LinearLayout>

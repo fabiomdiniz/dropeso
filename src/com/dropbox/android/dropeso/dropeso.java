@@ -30,7 +30,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -60,6 +62,8 @@ public class dropeso extends Activity {
 	private EditText mLoginEmail;
 	private EditText mLoginPassword;
 	private Button mSubmit;
+	private EditText mWeightValue;
+	private Button mUploadWeight;
 	private TextView mText;
 	private ProgressDialog mProgress;
 	private Dropbox mDropbox;
@@ -78,7 +82,10 @@ public class dropeso extends Activity {
 		mLoginPassword = (EditText) findViewById(R.id.login_password);
 		mSubmit = (Button) findViewById(R.id.login_submit);
 		mText = (TextView) findViewById(R.id.text);
-
+		
+		mUploadWeight = (Button) findViewById(R.id.upload_button);
+		mWeightValue = (EditText) findViewById(R.id.weight_value);
+		
 		mProgress = new ProgressDialog(this);
 		mProgress.setMessage("Please wait...");
 		mProgress.setTitle("Login Info Found! Signing in...");
@@ -136,6 +143,75 @@ public class dropeso extends Activity {
 			}
 		});
 
+		mUploadWeight.setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+				try {
+					showToast("Downloading file...");
+					mDropbox.downloadDropboxFile("/Dropeso/dropeso.json", getApplicationContext().getFileStreamPath("dropeso.json"));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				FileInputStream f = null;
+				try {
+					f = openFileInput("dropeso.json");
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
+				byte[] buffer = new byte[(int) getApplicationContext()
+				     					.getFileStreamPath("dropeso.json").length()];
+				try {
+					f.read(buffer);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				String s = new String(buffer);
+				JSONObject json = null;
+				try {
+					json = new JSONObject(s);
+				} catch (JSONException e) {
+					e.printStackTrace();
+				};
+				
+				if(json.has("dates") && json.has("values"))
+				{
+					showToast("Data ok, appending...");
+				}
+				else
+				{
+					showToast("Data corrupted. Starting fresh...");
+					ArrayList<Double> values = new ArrayList<Double>();
+					values.add(Double.parseDouble(mWeightValue.getText().toString()));
+					ArrayList<String> dates = new ArrayList<String>();
+					Date date = new Date();
+					SimpleDateFormat mSimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+					dates.add(mSimpleDateFormat.format(date));
+					try {
+						json.put("values", values);
+						json.put("dates", dates);
+					} catch (JSONException e) {
+						e.printStackTrace();
+					}
+					FileOutputStream fos;
+					try {
+						fos = openFileOutput("dropeso.json",
+								Context.MODE_PRIVATE);
+						fos.write(json.toString().getBytes());
+						fos.close();
+						mDropbox.putFile(
+								"dropbox",
+								"/Dropeso",
+								getApplicationContext().getFileStreamPath(
+										"dropeso.json"));
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+
+				}
+
+				
+			}
+		});
+		
 		/*
 		 * if (mDropbox.authenticate()) { // We can query the account info
 		 * already, since we have stored // credentials getAccountInfo(); }
@@ -161,6 +237,7 @@ public class dropeso extends Activity {
 			setLoggedIn(true);
 			try {
 				displayAccountInfo(mDropbox.accountInfo());
+				
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -175,6 +252,9 @@ public class dropeso extends Activity {
 		mLoggedIn = loggedIn;
 		mLoginEmail.setEnabled(!loggedIn);
 		mLoginPassword.setEnabled(!loggedIn);
+		mWeightValue.setEnabled(loggedIn);
+		mUploadWeight.setEnabled(loggedIn);
+		
 		if (loggedIn) {
 			mSubmit.setText("Log Out of Dropbox");
 		} else {
@@ -247,9 +327,7 @@ public class dropeso extends Activity {
 					+ "Quota: " + account.quotaQuota + "\nFound: ";
 			ArrayList<Entry> dropeso_files = mDropbox.listDirectory("/Dropeso");
 			if (dropeso_files == null) {
-				Toast toast = Toast.makeText(getApplicationContext(),
-						"Creating Folder and File", Toast.LENGTH_SHORT);
-				toast.show();
+				showToast("Creating Folder and File");
 				mDropbox.createFolder("dropbox", "/Dropeso");
 				FileOutputStream fos = openFileOutput("dropeso.json",
 							Context.MODE_PRIVATE);
@@ -269,9 +347,7 @@ public class dropeso extends Activity {
 					}
 				}
 				if (!json_found) {
-					Toast toast = Toast.makeText(getApplicationContext(),
-							"Creating File", Toast.LENGTH_SHORT);
-					toast.show();
+					showToast("Creating File");
 					FileOutputStream fos = openFileOutput("dropeso.json",
 							Context.MODE_PRIVATE);
 					fos.close();
