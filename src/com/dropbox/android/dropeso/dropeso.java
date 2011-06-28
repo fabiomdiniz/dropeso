@@ -75,7 +75,7 @@ public class dropeso extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
-
+		
 		mDropbox = new Dropbox(this, CONSUMER_KEY, CONSUMER_SECRET);
 
 		mLoginEmail = (EditText) findViewById(R.id.login_email);
@@ -145,10 +145,15 @@ public class dropeso extends Activity {
 
 		mUploadWeight.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
+				runOnUiThread(new Runnable() {
+				    public void run() {
+				    	showToast("Downloading file...");
+				    }
+				});
 				try {
-					showToast("Downloading file...");
+					
 					mDropbox.downloadDropboxFile("/Dropeso/dropeso.json", getApplicationContext().getFileStreamPath("dropeso.json"));
-				} catch (IOException e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 				FileInputStream f = null;
@@ -165,19 +170,27 @@ public class dropeso extends Activity {
 					e.printStackTrace();
 				}
 				String s = new String(buffer);
+				Boolean json_ok = false;
 				JSONObject json = null;
-				try {
-					json = new JSONObject(s);
-				} catch (JSONException e) {
-					e.printStackTrace();
-				};
-				
-				if(json.has("dates") && json.has("values"))
-				{
-					showToast("Data ok, appending...");
+				if(!s.isEmpty()) {
+					try {
+						json = new JSONObject(s);
+					} catch (JSONException e) {
+						e.printStackTrace();
+					};
+					
+					if(json.has("dates") && json.has("values"))
+					{
+						showToast("Data ok, appending...");
+						json_ok = true;
+					}
+				}
+				if(json_ok) {
+					
 				}
 				else
 				{
+					json = new JSONObject();
 					showToast("Data corrupted. Starting fresh...");
 					ArrayList<Double> values = new ArrayList<Double>();
 					values.add(Double.parseDouble(mWeightValue.getText().toString()));
